@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f8fc">
+  <title>ICS Creator</title>
+  <meta name="description" content="Import selected dates from a Google Sheet and download an iCalendar file.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div class="icon" aria-hidden="true">31</div>
+      <div>
+        <p class="eyebrow">Calendar tool</p>
+        <h1>ICS Creator</h1>
+        <p class="subtitle">Import dates from a Google Sheet, tidy the list, then download a calendar file.</p>
+      </div>
+    </header>
+
+    <section class="card" aria-labelledby="sheet-title">
+      <div class="section-heading">
+        <span class="step">1</span>
+        <div>
+          <h2 id="sheet-title">Import from Google Sheets</h2>
+          <p>Paste a link to the sheet tab you want to use. The sheet must be accessible without signing in.</p>
+        </div>
+      </div>
+
+      <label for="sheetUrl">Google Sheet link</label>
+      <div class="input-action">
+        <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/spreadsheets/d/…">
+        <button id="loadSheet" class="button secondary" type="button">Load</button>
+      </div>
+
+      <details class="advanced">
+        <summary>Import options</summary>
+        <div class="grid two">
+          <div>
+            <label for="rowLimit">Rows to inspect</label>
+            <select id="rowLimit">
+              <option value="500" selected>Last 500</option>
+              <option value="1000">Last 1,000</option>
+              <option value="2500">Last 2,500</option>
+              <option value="all">All rows</option>
+            </select>
+          </div>
+          <div>
+            <label for="sheetGid">Sheet tab ID (gid)</label>
+            <input id="sheetGid" type="text" inputmode="numeric" placeholder="From link">
+          </div>
+        </div>
+      </details>
+
+      <div id="sheetStatus" class="status" role="status" aria-live="polite" hidden></div>
+
+      <div id="mapping" hidden>
+        <div class="divider"></div>
+        <div class="grid two">
+          <div>
+            <label for="dateColumn">Date column</label>
+            <select id="dateColumn"></select>
+          </div>
+          <div>
+            <label for="filterColumn">Filter column <span class="optional">optional</span></label>
+            <select id="filterColumn"></select>
+          </div>
+        </div>
+
+        <div id="filterValueWrap" hidden>
+          <label for="filterValue">Include rows where</label>
+          <select id="filterValue"></select>
+        </div>
+
+        <button id="importDates" class="button primary full" type="button">Import matching dates</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="dates-title">
+      <div class="section-heading">
+        <span class="step">2</span>
+        <div>
+          <h2 id="dates-title">Dates to export</h2>
+          <p>One date per line. You can also paste comma-separated dates or ranges such as 21/08/2026–23/08/2026.</p>
+        </div>
+      </div>
+
+      <textarea id="dates" rows="9" spellcheck="false" inputmode="text" placeholder="21/08/2026&#10;22/08/2026&#10;23/08/2026"></textarea>
+      <div class="textarea-meta">
+        <span id="dateCount">0 dates</span>
+        <button id="sortDates" class="text-button" type="button">Sort &amp; remove duplicates</button>
+      </div>
+      <div id="dateError" class="inline-error" role="alert" hidden></div>
+    </section>
+
+    <section class="card" aria-labelledby="event-title-heading">
+      <div class="section-heading">
+        <span class="step">3</span>
+        <div>
+          <h2 id="event-title-heading">Calendar event</h2>
+          <p>Choose whether consecutive dates stay separate or become one multi-day event.</p>
+        </div>
+      </div>
+
+      <label for="eventTitle">Event title</label>
+      <input id="eventTitle" type="text" autocomplete="off" placeholder="e.g. Clinic">
+
+      <fieldset class="segmented-fieldset">
+        <legend>Export mode</legend>
+        <div class="segmented">
+          <input id="modeIndividual" type="radio" name="mode" value="individual" checked>
+          <label for="modeIndividual">Individual days</label>
+          <input id="modeGrouped" type="radio" name="mode" value="grouped">
+          <label for="modeGrouped">Group consecutive</label>
+        </div>
+      </fieldset>
+
+      <div id="preview" class="preview" hidden></div>
+
+      <label for="fileName">File name</label>
+      <div class="filename-input">
+        <input id="fileName" type="text" autocomplete="off" value="calendar">
+        <span>.ics</span>
+      </div>
+    </section>
+
+    <div class="sticky-download">
+      <button id="download" class="button download full" type="button" disabled>
+        <span>Download .ics</span>
+        <span aria-hidden="true">↓</span>
+      </button>
+    </div>
+
+    <footer>
+      <p>The calendar file is created on your device. Imported sheet data is not uploaded by this page.</p>
+    </footer>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
