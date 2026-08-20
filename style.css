@@ -61,7 +61,7 @@ h2 { margin: 1px 0 4px; font-size: 18px; letter-spacing: -.015em; }
 label, legend { display: block; margin: 0 0 7px; font-size: 13px; font-weight: 700; }
 .optional { color: var(--muted); font-weight: 500; }
 input, select, textarea {
-  width: 100%; min-height: 48px; border: 1px solid #d6e2e0; border-radius: 13px;
+  width: 100%; min-width: 0; min-height: 48px; border: 1px solid #d6e2e0; border-radius: 13px;
   background: #fff; color: var(--text); outline: none; transition: border-color .15s, box-shadow .15s;
 }
 input, select { padding: 0 13px; }
@@ -69,7 +69,7 @@ textarea { padding: 13px; line-height: 1.55; resize: vertical; min-height: 178px
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(15,143,135,.12); }
 input::placeholder, textarea::placeholder { color: #9baaa7; }
 
-.input-action { display: grid; grid-template-columns: 1fr auto; gap: 9px; }
+.input-action { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 9px; }
 .button { min-height: 48px; border: 0; border-radius: 13px; padding: 0 17px; font-weight: 800; transition: transform .08s, opacity .15s, background .15s; }
 .button:active { transform: scale(.985); }
 .button:disabled { opacity: .45; cursor: not-allowed; }
@@ -83,14 +83,18 @@ input::placeholder, textarea::placeholder { color: #9baaa7; }
 .advanced summary { color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer; }
 .advanced[open] summary { margin-bottom: 13px; }
 .grid { display: grid; gap: 12px; }
-.grid.two { grid-template-columns: 1fr 1fr; }
+.grid.two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+.grid > * { min-width: 0; }
 .divider { height: 1px; margin: 19px 0; background: var(--line); }
 #filterValueWrap { margin-top: 12px; }
 
-.date-filter-panel { margin-top: 15px; padding: 14px; border: 1px solid #cfe9e5; border-radius: 15px; background: var(--accent-wash); }
+.date-filter-panel { margin-top: 15px; padding: 14px; border: 1px solid #cfe9e5; border-radius: 15px; background: var(--accent-wash); overflow: hidden; }
 .date-filter-heading { display: flex; align-items: baseline; gap: 7px; margin-bottom: 11px; color: var(--accent-dark); font-size: 13px; }
 .date-filter-heading span { color: var(--muted); font-size: 12px; font-weight: 500; }
+.date-filter-grid { width: 100%; grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+.date-filter-grid > div { min-width: 0; }
 .date-filter-grid label { color: var(--muted); font-size: 12px; }
+.date-filter-grid input[type="date"] { display: block; width: 100%; max-width: 100%; min-width: 0; -webkit-appearance: none; appearance: none; }
 .date-filter-help { margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
 
 .status, .inline-error, .preview { margin-top: 14px; border-radius: 13px; padding: 12px 13px; font-size: 13px; line-height: 1.45; }
@@ -108,7 +112,7 @@ input::placeholder, textarea::placeholder { color: #9baaa7; }
 .segmented label { margin: 0; padding: 11px 8px; border-radius: 10px; text-align: center; color: var(--muted); font-size: 13px; }
 .segmented input:checked + label { background: #fff; color: var(--accent-dark); box-shadow: 0 2px 7px rgba(22,56,51,.10); }
 
-.filename-input { display: grid; grid-template-columns: 1fr auto; align-items: center; }
+.filename-input { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; }
 .filename-input input { border-radius: 13px 0 0 13px; }
 .filename-input span { height: 48px; display: grid; place-items: center; padding: 0 13px; border: 1px solid #d6e2e0; border-left: 0; border-radius: 0 13px 13px 0; background: #f5f9f8; color: var(--muted); }
 #fileName { margin-top: 0; }
@@ -129,14 +133,11 @@ footer { padding: 9px 8px 0; text-align: center; }
   .hero { padding-left: 5px; padding-right: 5px; }
   .card { padding: 17px; border-radius: 19px; }
   .grid.two { grid-template-columns: 1fr; }
-  .date-filter-grid { grid-template-columns: 1fr 1fr !important; }
+  .date-filter-grid { grid-template-columns: 1fr; gap: 10px; }
+  .date-filter-panel { padding: 14px 13px; }
   .input-action { grid-template-columns: 1fr; }
   .input-action .button { width: 100%; }
   .textarea-meta { align-items: flex-start; }
-}
-
-@media (max-width: 360px) {
-  .date-filter-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {
