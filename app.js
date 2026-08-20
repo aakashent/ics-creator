@@ -61,6 +61,66 @@ function guessDateColumn(headers) {
   return headers.findIndex(h => /date/i.test(h));
 }
 
+async function fetchSheetCSV(id, gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`;
+  const response = await fetch(url, { credentials: 'omit' });
+  if (!response.ok) throw new Error(`Google returned ${response.status}.`);
+  const csv = await response.text();
+  if (/<!doctype html|<html/i.test(csv.slice(0, 300))) throw new Error('Google returned a sign-in page.');
+  const parsedRows = parseCSV(csv);
+  if (parsedRows.length < 2) throw new Error('No data rows were found in this sheet tab.');
+  return {
+    headers: parsedRows[0].map((h, i) => String(h).trim() || `Column ${i + 1}`),
+    rows: parsedRows.slice(1)
+  };
+}
+
+function fetchSheetJSONP(id, gid) {
+  return new Promise((resolve, reject) => {
+    const callback = `__icsCreator_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement('script');
+    const timer = setTimeout(() => finish(new Error('Google Sheets did not respond.')), 12000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      script.remove();
+      try { delete window[callback]; } catch (_) { window[callback] = undefined; }
+    }
+    function finish(error, value) {
+      cleanup();
+      if (error) reject(error); else resolve(value);
+    }
+
+    window[callback] = (data) => {
+      try {
+        if (!data || data.status === 'error' || !data.table) throw new Error('The sheet could not be read. Check its sharing settings and tab ID.');
+        const cols = data.table.cols || [];
+        const headers = cols.map((col, i) => String(col.label || col.id || `Column ${i + 1}`).trim());
+        const rows = (data.table.rows || []).map(row => cols.map((_, i) => {
+          const cell = row.c && row.c[i];
+          if (!cell) return '';
+          if (cell.f != null) return String(cell.f);
+          return cell.v == null ? '' : String(cell.v);
+        })).filter(row => row.some(v => String(v).trim() !== ''));
+        if (!rows.length) throw new Error('No data rows were found in this sheet tab.');
+        finish(null, { headers, rows });
+      } catch (err) { finish(err); }
+    };
+
+    script.onerror = () => finish(new Error('The sheet could not be loaded. It must be accessible without signing in.'));
+    script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(id)}/gviz/tq?gid=${encodeURIComponent(gid)}&tqx=${encodeURIComponent(`responseHandler:${callback}`)}`;
+    document.head.appendChild(script);
+  });
+}
+
+async function getSheetData(id, gid) {
+  try {
+    return await fetchSheetCSV(id, gid);
+  } catch (_) {
+    return fetchSheetJSONP(id, gid);
+  }
+}
+
 async function loadSheet() {
   els.loadSheet.disabled = true;
   els.mapping.hidden = true;
@@ -69,31 +129,23 @@ async function loadSheet() {
     const parsed = parseSheetLink(els.sheetUrl.value);
     const gid = String(els.sheetGid.value || parsed.gid || '0').trim();
     els.sheetGid.value = gid;
-    const url = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(parsed.id)}/gviz/tq?tqx=out:csv&gid=${encodeURIComponent(gid)}`;
-    const response = await fetch(url, { credentials: 'omit' });
-    if (!response.ok) throw new Error(`Google returned ${response.status}. Check that the sheet can be viewed without signing in.`);
-    const csv = await response.text();
-    if (/<!doctype html|<html/i.test(csv.slice(0, 300))) throw new Error('Google returned a sign-in page. The sheet must be accessible without signing in.');
-    const parsedRows = parseCSV(csv);
-    if (parsedRows.length < 2) throw new Error('No data rows were found in this sheet tab.');
-
-    const headers = parsedRows[0].map((h, i) => String(h).trim() || `Column ${i + 1}`);
-    const allRows = parsedRows.slice(1);
+    const data = await getSheetData(parsed.id, gid);
+    const allRows = data.rows;
     const limitValue = els.rowLimit.value;
     const limit = limitValue === 'all' ? allRows.length : Number(limitValue);
     const rows = allRows.slice(Math.max(0, allRows.length - limit));
-    sheet = { headers, rows, totalRows: allRows.length, usedRows: rows.length };
+    sheet = { headers: data.headers, rows, totalRows: allRows.length, usedRows: rows.length };
 
-    fillSelect(els.dateColumn, headers);
-    fillSelect(els.filterColumn, headers, 'No filter — include all rows');
-    const guessed = guessDateColumn(headers);
+    fillSelect(els.dateColumn, data.headers);
+    fillSelect(els.filterColumn, data.headers, 'No filter — include all rows');
+    const guessed = guessDateColumn(data.headers);
     if (guessed >= 0) els.dateColumn.value = String(guessed);
     els.filterColumn.value = '';
     els.filterValueWrap.hidden = true;
     els.mapping.hidden = false;
     setStatus(`Loaded ${rows.length.toLocaleString('en-GB')} of ${allRows.length.toLocaleString('en-GB')} data rows from this tab.`);
   } catch (err) {
-    setStatus(err.message || 'Could not load the sheet.', true);
+    setStatus(`${err.message || 'Could not load the sheet.'} The sheet must be accessible to anyone with the link.`, true);
   } finally {
     els.loadSheet.disabled = false;
   }
@@ -121,7 +173,7 @@ function makeUTCDate(y, m, d) {
   return date;
 }
 
-function parseDate(value) {
+function parseDate(value, fallbackYear = new Date().getFullYear()) {
   const raw = String(value ?? '').trim();
   if (!raw) return null;
   let m = raw.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})(?:\s.*)?$/);
@@ -129,8 +181,12 @@ function parseDate(value) {
     let y = Number(m[3]); if (y < 100) y += y >= 70 ? 1900 : 2000;
     return makeUTCDate(y, Number(m[2]), Number(m[1]));
   }
+  m = raw.match(/^(\d{1,2})[\/.](\d{1,2})$/);
+  if (m) return makeUTCDate(fallbackYear, Number(m[2]), Number(m[1]));
   m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
   if (m) return makeUTCDate(Number(m[1]), Number(m[2]), Number(m[3]));
+  m = raw.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})\)$/i);
+  if (m) return makeUTCDate(Number(m[1]), Number(m[2]) + 1, Number(m[3]));
   const d = new Date(raw);
   if (!Number.isNaN(d.getTime())) return makeUTCDate(d.getFullYear(), d.getMonth() + 1, d.getDate());
   return null;
@@ -144,13 +200,21 @@ function splitDateInput(text) {
   return String(text || '').replace(/\r/g, '\n').split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
 }
 
+function getRangeParts(token) {
+  const m = token.match(/^\s*(\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?)\s*(?:-|–|—|to)\s*(\d{1,2}[\/.]\d{1,2}(?:[\/.]\d{2,4})?)\s*$/i);
+  return m ? [m[1], m[2]] : null;
+}
+
 function parseDateList(text) {
   const dates = new Map();
   const invalid = [];
   for (const token of splitDateInput(text)) {
-    const rangeParts = token.split(/\s+(?:to|–|—|-)\s+/i);
-    if (rangeParts.length === 2) {
-      const start = parseDate(rangeParts[0]), end = parseDate(rangeParts[1]);
+    const rangeParts = getRangeParts(token);
+    if (rangeParts) {
+      const start = parseDate(rangeParts[0]);
+      let end = parseDate(rangeParts[1], start ? start.getUTCFullYear() : new Date().getFullYear());
+      const endHasYear = /[\/.]\d{2,4}$/.test(rangeParts[1]);
+      if (start && end && end < start && !endHasYear) end = makeUTCDate(start.getUTCFullYear() + 1, end.getUTCMonth() + 1, end.getUTCDate());
       if (!start || !end || end < start) { invalid.push(token); continue; }
       const span = Math.round((end - start) / 86400000);
       if (span > 3660) { invalid.push(token); continue; }
