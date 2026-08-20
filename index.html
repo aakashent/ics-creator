@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#f7f8fc">
+  <meta name="theme-color" content="#0f8f87">
   <title>ICS Creator</title>
   <meta name="description" content="Import selected dates from a Google Sheet and download an iCalendar file.">
   <link rel="stylesheet" href="style.css">
@@ -71,6 +71,24 @@
         <div id="filterValueWrap" hidden>
           <label for="filterValue">Include rows where</label>
           <select id="filterValue"></select>
+        </div>
+
+        <div class="date-filter-panel">
+          <div class="date-filter-heading">
+            <strong>Import date filter</strong>
+            <span>optional</span>
+          </div>
+          <div class="grid two date-filter-grid">
+            <div>
+              <label for="dateFrom">From</label>
+              <input id="dateFrom" type="date">
+            </div>
+            <div>
+              <label for="dateTo">To</label>
+              <input id="dateTo" type="date">
+            </div>
+          </div>
+          <p class="date-filter-help">Leave either field blank to keep that end of the range open.</p>
         </div>
 
         <button id="importDates" class="button primary full" type="button">Import matching dates</button>
