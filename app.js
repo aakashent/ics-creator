@@ -2,7 +2,8 @@
 
 const $ = (id) => document.getElementById(id);
 const els = {
-  sheetUrl: $('sheetUrl'), loadSheet: $('loadSheet'), rowLimit: $('rowLimit'), sheetGid: $('sheetGid'),
+  sheetUrl: $('sheetUrl'), loadSheet: $('loadSheet'), localFile: $('localFile'), rowLimit: $('rowLimit'), sheetGid: $('sheetGid'),
+  workbookSheetWrap: $('workbookSheetWrap'), workbookSheet: $('workbookSheet'),
   sheetStatus: $('sheetStatus'), mapping: $('mapping'), dateColumn: $('dateColumn'), filterColumn: $('filterColumn'),
   filterValueWrap: $('filterValueWrap'), filterValue: $('filterValue'), importDates: $('importDates'), dates: $('dates'),
   dateCount: $('dateCount'), sortDates: $('sortDates'), dateError: $('dateError'), eventTitle: $('eventTitle'),
@@ -10,6 +11,8 @@ const els = {
 };
 
 let sheet = { headers: [], rows: [], totalRows: 0, usedRows: 0 };
+let workbook = null;
+let workbookFileName = '';
 
 function parseSheetLink(value) {
   const text = String(value || '').trim();
@@ -59,6 +62,79 @@ function guessDateColumn(headers) {
   const exact = headers.findIndex(h => /^\s*(date|shift date|clinic date|start date)\s*$/i.test(h));
   if (exact >= 0) return exact;
   return headers.findIndex(h => /date/i.test(h));
+}
+
+function normaliseTable(rows) {
+  const nonEmpty = rows.filter(row => Array.isArray(row) && row.some(value => String(value ?? '').trim() !== ''));
+  if (nonEmpty.length < 2) throw new Error('No data rows were found.');
+  const headers = nonEmpty[0].map((value, i) => String(value ?? '').trim() || `Column ${i + 1}`);
+  const width = headers.length;
+  const dataRows = nonEmpty.slice(1).map(row => Array.from({ length: width }, (_, i) => row[i] ?? ''));
+  return { headers, rows: dataRows };
+}
+
+function applyImportedData(data, sourceLabel) {
+  const allRows = data.rows;
+  const limitValue = els.rowLimit.value;
+  const limit = limitValue === 'all' ? allRows.length : Number(limitValue);
+  const rows = allRows.slice(Math.max(0, allRows.length - limit));
+  sheet = { headers: data.headers, rows, totalRows: allRows.length, usedRows: rows.length };
+
+  fillSelect(els.dateColumn, data.headers);
+  fillSelect(els.filterColumn, data.headers, 'No filter — include all rows');
+  const guessed = guessDateColumn(data.headers);
+  if (guessed >= 0) els.dateColumn.value = String(guessed);
+  els.filterColumn.value = '';
+  els.filterValueWrap.hidden = true;
+  els.mapping.hidden = false;
+  setStatus(`Loaded ${rows.length.toLocaleString('en-GB')} of ${allRows.length.toLocaleString('en-GB')} data rows from ${sourceLabel}.`);
+}
+
+function workbookSheetData(name) {
+  if (!workbook || !name || !workbook.Sheets[name]) throw new Error('That worksheet could not be read.');
+  const rows = XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, raw: true, defval: '' });
+  return normaliseTable(rows);
+}
+
+function loadWorkbookSheet() {
+  try {
+    const name = els.workbookSheet.value;
+    applyImportedData(workbookSheetData(name), `${workbookFileName} · ${name}`);
+  } catch (err) {
+    els.mapping.hidden = true;
+    setStatus(err.message || 'Could not read that worksheet.', true);
+  }
+}
+
+async function loadLocalFile(file) {
+  els.mapping.hidden = true;
+  els.workbookSheetWrap.hidden = true;
+  workbook = null;
+  workbookFileName = file?.name || '';
+  if (!file) return;
+
+  setStatus(`Reading ${file.name}…`);
+  try {
+    if (/\.csv$/i.test(file.name)) {
+      applyImportedData(normaliseTable(parseCSV(await file.text())), file.name);
+      return;
+    }
+    if (!/\.(xlsx|xls)$/i.test(file.name)) throw new Error('Choose an .xlsx, .xls or .csv file.');
+    if (!globalThis.XLSX) throw new Error('The Excel reader did not load. Check your internet connection and try again.');
+
+    workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+    if (!workbook.SheetNames?.length) throw new Error('No worksheets were found in this workbook.');
+
+    els.workbookSheet.replaceChildren();
+    workbook.SheetNames.forEach(name => els.workbookSheet.add(new Option(name, name)));
+    els.workbookSheet.value = workbook.SheetNames[0];
+    els.workbookSheetWrap.hidden = workbook.SheetNames.length <= 1;
+    loadWorkbookSheet();
+  } catch (err) {
+    workbook = null;
+    els.mapping.hidden = true;
+    setStatus(err.message || 'Could not read that file.', true);
+  }
 }
 
 async function fetchSheetCSV(id, gid) {
@@ -130,20 +206,9 @@ async function loadSheet() {
     const gid = String(els.sheetGid.value || parsed.gid || '0').trim();
     els.sheetGid.value = gid;
     const data = await getSheetData(parsed.id, gid);
-    const allRows = data.rows;
-    const limitValue = els.rowLimit.value;
-    const limit = limitValue === 'all' ? allRows.length : Number(limitValue);
-    const rows = allRows.slice(Math.max(0, allRows.length - limit));
-    sheet = { headers: data.headers, rows, totalRows: allRows.length, usedRows: rows.length };
-
-    fillSelect(els.dateColumn, data.headers);
-    fillSelect(els.filterColumn, data.headers, 'No filter — include all rows');
-    const guessed = guessDateColumn(data.headers);
-    if (guessed >= 0) els.dateColumn.value = String(guessed);
-    els.filterColumn.value = '';
-    els.filterValueWrap.hidden = true;
-    els.mapping.hidden = false;
-    setStatus(`Loaded ${rows.length.toLocaleString('en-GB')} of ${allRows.length.toLocaleString('en-GB')} data rows from this tab.`);
+    workbook = null;
+    els.workbookSheetWrap.hidden = true;
+    applyImportedData(data, 'this Google Sheet tab');
   } catch (err) {
     setStatus(`${err.message || 'Could not load the sheet.'} The sheet must be accessible to anyone with the link.`, true);
   } finally {
@@ -174,6 +239,9 @@ function makeUTCDate(y, m, d) {
 }
 
 function parseDate(value, fallbackYear = new Date().getFullYear()) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return makeUTCDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
+  }
   const raw = String(value ?? '').trim();
   if (!raw) return null;
   let m = raw.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2}|\d{4})(?:\s.*)?$/);
@@ -338,6 +406,8 @@ function downloadICS() {
 }
 
 els.loadSheet.addEventListener('click', loadSheet);
+els.localFile.addEventListener('change', () => loadLocalFile(els.localFile.files?.[0]));
+els.workbookSheet.addEventListener('change', loadWorkbookSheet);
 els.filterColumn.addEventListener('change', updateFilterValues);
 els.importDates.addEventListener('click', importMatchingDates);
 els.dates.addEventListener('input', updateDateUI);
