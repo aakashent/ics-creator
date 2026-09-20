@@ -143,3 +143,44 @@ footer { padding: 9px 8px 0; text-align: center; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
 }
+
+
+.import-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 15px 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 800;
+}
+.import-or::before, .import-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.file-input {
+  padding: 9px;
+  min-height: 48px;
+}
+.file-input::file-selector-button {
+  min-height: 30px;
+  margin-right: 10px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font: inherit;
+  font-weight: 800;
+}
+.file-help {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.workbook-sheet { margin-top: 13px; }

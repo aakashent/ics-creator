@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0f8f87">
   <title>ICS Creator</title>
-  <meta name="description" content="Import selected dates from a Google Sheet and download an iCalendar file.">
+  <meta name="description" content="Import selected dates from Google Sheets, Excel or CSV and download an iCalendar file.">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
       <div>
         <p class="eyebrow">Calendar tool</p>
         <h1>ICS Creator</h1>
-        <p class="subtitle">Import dates from a Google Sheet, tidy the list, then download a calendar file.</p>
+        <p class="subtitle">Import dates from Google Sheets, Excel or CSV, tidy the list, then download a calendar file.</p>
       </div>
     </header>
 
@@ -23,15 +23,28 @@
       <div class="section-heading">
         <span class="step">1</span>
         <div>
-          <h2 id="sheet-title">Import from Google Sheets</h2>
-          <p>Paste a link to the sheet tab you want to use. The sheet must be accessible without signing in.</p>
+          <h2 id="sheet-title">Import dates</h2>
+          <p>Use a Google Sheet, or upload an Excel/CSV file from your device.</p>
         </div>
       </div>
 
-      <label for="sheetUrl">Google Sheet link</label>
-      <div class="input-action">
-        <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/spreadsheets/d/…">
-        <button id="loadSheet" class="button secondary" type="button">Load</button>
+      <div class="import-source">
+        <label for="sheetUrl">Google Sheet link</label>
+        <div class="input-action">
+          <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/spreadsheets/d/…">
+          <button id="loadSheet" class="button secondary" type="button">Load</button>
+        </div>
+
+        <div class="import-or"><span>or</span></div>
+
+        <label for="localFile">Excel or CSV file</label>
+        <input id="localFile" class="file-input" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <p class="file-help">The file is read in your browser and is not uploaded.</p>
+
+        <div id="workbookSheetWrap" class="workbook-sheet" hidden>
+          <label for="workbookSheet">Worksheet</label>
+          <select id="workbookSheet"></select>
+        </div>
       </div>
 
       <details class="advanced">
@@ -151,10 +164,11 @@
     </div>
 
     <footer>
-      <p>The calendar file is created on your device. Imported sheet data is not uploaded by this page.</p>
+      <p>The calendar file is created on your device. Excel/CSV files are read locally; Google Sheet data is fetched directly from Google.</p>
     </footer>
   </main>
 
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" defer></script>
   <script src="app.js" defer></script>
   <script src="import-filter.js" defer></script>
 </body>
