@@ -226,7 +226,7 @@ async function loadSheet() {
     if (generation !== importGeneration) return;
     setStatus(`${err.message || 'Could not load the sheet.'} The sheet must be accessible to anyone with the link.`, true);
   } finally {
-    if (generation === importGeneration) els.loadSheet.disabled = false;
+    els.loadSheet.disabled = false;
   }
 }
 
