@@ -13,6 +13,7 @@ const els = {
 let sheet = { headers: [], rows: [], totalRows: 0, usedRows: 0 };
 let workbook = null;
 let workbookFileName = '';
+let importGeneration = 0;
 
 function parseSheetLink(value) {
   const text = String(value || '').trim();
@@ -107,6 +108,7 @@ function loadWorkbookSheet() {
 }
 
 async function loadLocalFile(file) {
+  const generation = ++importGeneration;
   els.mapping.hidden = true;
   els.workbookSheetWrap.hidden = true;
   workbook = null;
@@ -116,21 +118,30 @@ async function loadLocalFile(file) {
   setStatus(`Reading ${file.name}…`);
   try {
     if (/\.csv$/i.test(file.name)) {
-      applyImportedData(normaliseTable(parseCSV(await file.text())), file.name);
+      const text = await file.text();
+      if (generation !== importGeneration) return;
+      applyImportedData(normaliseTable(parseCSV(text)), file.name);
       return;
     }
     if (!/\.(xlsx|xls)$/i.test(file.name)) throw new Error('Choose an .xlsx, .xls or .csv file.');
     if (!globalThis.XLSX) throw new Error('The Excel reader did not load. Check your internet connection and try again.');
 
-    workbook = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
-    if (!workbook.SheetNames?.length) throw new Error('No worksheets were found in this workbook.');
+    const bytes = await file.arrayBuffer();
+    if (generation !== importGeneration) return;
 
+    const parsedWorkbook = XLSX.read(bytes, { type: 'array', cellDates: true });
+    if (generation !== importGeneration) return;
+    if (!parsedWorkbook.SheetNames?.length) throw new Error('No worksheets were found in this workbook.');
+
+    workbook = parsedWorkbook;
+    workbookFileName = file.name;
     els.workbookSheet.replaceChildren();
     workbook.SheetNames.forEach(name => els.workbookSheet.add(new Option(name, name)));
     els.workbookSheet.value = workbook.SheetNames[0];
     els.workbookSheetWrap.hidden = workbook.SheetNames.length <= 1;
     loadWorkbookSheet();
   } catch (err) {
+    if (generation !== importGeneration) return;
     workbook = null;
     els.mapping.hidden = true;
     setStatus(err.message || 'Could not read that file.', true);
@@ -198,6 +209,7 @@ async function getSheetData(id, gid) {
 }
 
 async function loadSheet() {
+  const generation = ++importGeneration;
   els.loadSheet.disabled = true;
   els.mapping.hidden = true;
   setStatus('Loading sheet…');
@@ -206,13 +218,15 @@ async function loadSheet() {
     const gid = String(els.sheetGid.value || parsed.gid || '0').trim();
     els.sheetGid.value = gid;
     const data = await getSheetData(parsed.id, gid);
+    if (generation !== importGeneration) return;
     workbook = null;
     els.workbookSheetWrap.hidden = true;
     applyImportedData(data, 'this Google Sheet tab');
   } catch (err) {
+    if (generation !== importGeneration) return;
     setStatus(`${err.message || 'Could not load the sheet.'} The sheet must be accessible to anyone with the link.`, true);
   } finally {
-    els.loadSheet.disabled = false;
+    if (generation === importGeneration) els.loadSheet.disabled = false;
   }
 }
 
@@ -240,7 +254,9 @@ function makeUTCDate(y, m, d) {
 
 function parseDate(value, fallbackYear = new Date().getFullYear()) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return makeUTCDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
+    // SheetJS creates Excel date-only cells as local Date objects. Using UTC
+    // getters shifts dates back a day during British Summer Time.
+    return makeUTCDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
   }
   const raw = String(value ?? '').trim();
   if (!raw) return null;
