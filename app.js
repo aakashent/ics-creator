@@ -254,7 +254,9 @@ function makeUTCDate(y, m, d) {
 
 function parseDate(value, fallbackYear = new Date().getFullYear()) {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return makeUTCDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate());
+    // SheetJS creates Excel date-only cells as local Date objects. Using UTC
+    // getters shifts dates back a day during British Summer Time.
+    return makeUTCDate(value.getFullYear(), value.getMonth() + 1, value.getDate());
   }
   const raw = String(value ?? '').trim();
   if (!raw) return null;
