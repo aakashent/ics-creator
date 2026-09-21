@@ -192,7 +192,7 @@ footer { padding: 9px 8px 0; text-align: center; }
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background: linear-gradient(135deg, #f3f8f6 0%, #faf5ee 38%, #f2f3fa 72%, #edf7f5 100%);
+  background: linear-gradient(135deg, #eff5f2 0%, #f8f2ea 36%, #eef0f8 70%, #e9f4f2 100%);
 }
 .ambient-glow {
   position: absolute;
@@ -204,10 +204,10 @@ footer { padding: 9px 8px 0; text-align: center; }
   will-change: transform;
   animation: ambient-drift 26s ease-in-out infinite alternate;
 }
-.glow-one { left: -22vw; top: -24vw; background: #b9e3dc; }
-.glow-two { right: -29vw; top: -7vw; background: #c9d8f5; animation-duration: 31s; }
-.glow-three { left: 17vw; bottom: -39vw; background: #f1ddc9; animation-duration: 35s; }
-.glow-four { right: -8vw; bottom: -33vw; background: #ded7f1; animation-duration: 38s; }
+.glow-one { left: -22vw; top: -24vw; background: #9fd4ca; }
+.glow-two { right: -29vw; top: -7vw; background: #b9c9eb; animation-duration: 31s; }
+.glow-three { left: 17vw; bottom: -39vw; background: #efd8bf; animation-duration: 35s; }
+.glow-four { right: -8vw; bottom: -33vw; background: #d9ccea; animation-duration: 38s; }
 @keyframes ambient-drift {
   from { transform: translate3d(-2%, -2%, 0) scale(1); }
   to { transform: translate3d(6%, 5%, 0) scale(1.1); }
