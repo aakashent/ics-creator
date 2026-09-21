@@ -19,11 +19,20 @@
   <main class="shell">
     <header class="hero">
       <div class="icon" aria-hidden="true">31</div>
-      <div>
+      <div class="hero-copy">
         <p class="eyebrow">Calendar tool</p>
         <h1>ICS Creator</h1>
         <p class="subtitle">Import dates from Google Sheets, Excel or CSV, tidy the list, then download a calendar file.</p>
       </div>
+      <fieldset class="theme-switcher" aria-label="Colour theme">
+        <legend class="visually-hidden">Colour theme</legend>
+        <input id="themeAuto" type="radio" name="theme" value="auto" checked>
+        <label for="themeAuto">Auto</label>
+        <input id="themeLight" type="radio" name="theme" value="light">
+        <label for="themeLight">Light</label>
+        <input id="themeDark" type="radio" name="theme" value="dark">
+        <label for="themeDark">Dark</label>
+      </fieldset>
     </header>
 
     <section class="card" aria-labelledby="sheet-title">
