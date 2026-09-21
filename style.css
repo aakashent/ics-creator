@@ -430,20 +430,39 @@ html[data-theme="dark"] .button.secondary {
 
 @media (max-width: 620px) {
   .hero {
-    align-items: flex-start;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 12px 16px;
+    align-items: start;
   }
+
+  .icon {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .hero-copy {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+
   .theme-switcher {
-    margin-left: 74px;
-    margin-top: -13px;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    margin: -4px 0 0;
+    width: min(100%, 220px);
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .theme-switcher label {
+    text-align: center;
   }
 }
 
 @media (max-width: 420px) {
   .theme-switcher {
-    margin-left: 0;
     width: 100%;
-    grid-template-columns: repeat(3, 1fr);
   }
-  .theme-switcher label { text-align: center; }
 }
