@@ -2,6 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const els = {
+  themeAuto: $('themeAuto'), themeLight: $('themeLight'), themeDark: $('themeDark'),
   googleMode: $('googleMode'), fileMode: $('fileMode'), googlePanel: $('googlePanel'), filePanel: $('filePanel'), sheetGidWrap: $('sheetGidWrap'),
   sheetUrl: $('sheetUrl'), loadSheet: $('loadSheet'), localFile: $('localFile'), rowLimit: $('rowLimit'), sheetGid: $('sheetGid'),
   workbookSheetWrap: $('workbookSheetWrap'), workbookSheet: $('workbookSheet'),
@@ -15,6 +16,50 @@ let sheet = { headers: [], rows: [], totalRows: 0, usedRows: 0 };
 let workbook = null;
 let workbookFileName = '';
 let importGeneration = 0;
+
+
+const THEME_KEY = 'icsCreatorTheme';
+const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+function currentThemePreference() {
+  try {
+    const value = localStorage.getItem(THEME_KEY);
+    return ['light', 'dark'].includes(value) ? value : 'auto';
+  } catch (_) {
+    return 'auto';
+  }
+}
+
+function applyTheme(preference) {
+  const root = document.documentElement;
+  if (preference === 'light' || preference === 'dark') root.dataset.theme = preference;
+  else delete root.dataset.theme;
+
+  els.themeAuto.checked = preference === 'auto';
+  els.themeLight.checked = preference === 'light';
+  els.themeDark.checked = preference === 'dark';
+
+  const dark = preference === 'dark' || (preference === 'auto' && systemDark.matches);
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute('content', dark ? '#0f1515' : '#0f8f87');
+}
+
+function saveTheme(preference) {
+  try {
+    if (preference === 'auto') localStorage.removeItem(THEME_KEY);
+    else localStorage.setItem(THEME_KEY, preference);
+  } catch (_) {}
+  applyTheme(preference);
+}
+
+els.themeAuto.addEventListener('change', () => els.themeAuto.checked && saveTheme('auto'));
+els.themeLight.addEventListener('change', () => els.themeLight.checked && saveTheme('light'));
+els.themeDark.addEventListener('change', () => els.themeDark.checked && saveTheme('dark'));
+systemDark.addEventListener?.('change', () => {
+  if (currentThemePreference() === 'auto') applyTheme('auto');
+});
+applyTheme(currentThemePreference());
+
 
 function parseSheetLink(value) {
   const text = String(value || '').trim();
