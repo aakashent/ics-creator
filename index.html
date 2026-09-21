@@ -9,6 +9,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="ambient-background" aria-hidden="true">
+    <span class="ambient-glow glow-one"></span>
+    <span class="ambient-glow glow-two"></span>
+    <span class="ambient-glow glow-three"></span>
+    <span class="ambient-glow glow-four"></span>
+  </div>
+
   <main class="shell">
     <header class="hero">
       <div class="icon" aria-hidden="true">31</div>
@@ -29,21 +36,30 @@
       </div>
 
       <div class="import-source">
-        <label for="sheetUrl">Google Sheet link</label>
-        <div class="input-action">
-          <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/spreadsheets/d/…">
-          <button id="loadSheet" class="button secondary" type="button">Load</button>
+        <div class="import-switch" role="radiogroup" aria-label="Import source">
+          <input id="googleMode" type="radio" name="importSource" value="google" checked>
+          <label for="googleMode">Google Sheet</label>
+          <input id="fileMode" type="radio" name="importSource" value="file">
+          <label for="fileMode">Excel / CSV</label>
         </div>
 
-        <div class="import-or"><span>or</span></div>
+        <div id="googlePanel" class="import-panel">
+          <label for="sheetUrl">Google Sheet link</label>
+          <div class="input-action">
+            <input id="sheetUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://docs.google.com/spreadsheets/d/…">
+            <button id="loadSheet" class="button secondary" type="button">Load</button>
+          </div>
+        </div>
 
-        <label for="localFile">Excel or CSV file</label>
-        <input id="localFile" class="file-input" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-        <p class="file-help">The file is read in your browser and is not uploaded.</p>
+        <div id="filePanel" class="import-panel" hidden>
+          <label for="localFile">Excel or CSV file</label>
+          <input id="localFile" class="file-input" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+          <p class="file-help">The file is read in your browser and is not uploaded.</p>
 
-        <div id="workbookSheetWrap" class="workbook-sheet" hidden>
-          <label for="workbookSheet">Worksheet</label>
-          <select id="workbookSheet"></select>
+          <div id="workbookSheetWrap" class="workbook-sheet" hidden>
+            <label for="workbookSheet">Worksheet</label>
+            <select id="workbookSheet"></select>
+          </div>
         </div>
       </div>
 
@@ -59,7 +75,7 @@
               <option value="all">All rows</option>
             </select>
           </div>
-          <div>
+          <div id="sheetGidWrap">
             <label for="sheetGid">Sheet tab ID (gid)</label>
             <input id="sheetGid" type="text" inputmode="numeric" placeholder="From link">
           </div>
@@ -86,7 +102,7 @@
           <select id="filterValue"></select>
         </div>
 
-        <div class="date-filter-panel">
+        <div class="date-filter">
           <div class="date-filter-heading">
             <strong>Import date filter</strong>
             <span>optional</span>
@@ -164,7 +180,7 @@
     </div>
 
     <footer>
-      <p>The calendar file is created on your device. Excel/CSV files are read locally; Google Sheet data is fetched directly from Google.</p>
+      <p class="privacy"><span aria-hidden="true">🔒</span><span>The calendar file is created on your device. Excel/CSV files are read locally; Google Sheet data is fetched directly from Google.</span></p>
     </footer>
   </main>
 
