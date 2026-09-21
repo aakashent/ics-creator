@@ -2,6 +2,7 @@
 
 const $ = (id) => document.getElementById(id);
 const els = {
+  googleMode: $('googleMode'), fileMode: $('fileMode'), googlePanel: $('googlePanel'), filePanel: $('filePanel'), sheetGidWrap: $('sheetGidWrap'),
   sheetUrl: $('sheetUrl'), loadSheet: $('loadSheet'), localFile: $('localFile'), rowLimit: $('rowLimit'), sheetGid: $('sheetGid'),
   workbookSheetWrap: $('workbookSheetWrap'), workbookSheet: $('workbookSheet'),
   sheetStatus: $('sheetStatus'), mapping: $('mapping'), dateColumn: $('dateColumn'), filterColumn: $('filterColumn'),
@@ -420,6 +421,17 @@ function downloadICS() {
   a.href = url; a.download = `${safeName}.ics`; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+function updateImportSource() {
+  const useGoogle = els.googleMode.checked;
+  els.googlePanel.hidden = !useGoogle;
+  els.filePanel.hidden = useGoogle;
+  els.sheetGidWrap.hidden = !useGoogle;
+}
+
+els.googleMode.addEventListener('change', updateImportSource);
+els.fileMode.addEventListener('change', updateImportSource);
+updateImportSource();
 
 els.loadSheet.addEventListener('click', loadSheet);
 els.localFile.addEventListener('change', () => loadLocalFile(els.localFile.files?.[0]));
