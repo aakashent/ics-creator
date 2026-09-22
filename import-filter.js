@@ -9,6 +9,24 @@
   const dateFrom = document.getElementById('dateFrom');
   const dateTo = document.getElementById('dateTo');
 
+  function clearImportedSourceState() {
+    importGeneration++;
+    sheet = { headers: [], rows: [], totalRows: 0, usedRows: 0 };
+    workbook = null;
+    workbookFileName = '';
+
+    els.mapping.hidden = true;
+    els.filterValueWrap.hidden = true;
+    els.workbookSheetWrap.hidden = true;
+    els.sheetStatus.hidden = true;
+    els.sheetStatus.textContent = '';
+    els.sheetStatus.classList.remove('error');
+    els.loadSheet.disabled = false;
+  }
+
+  els.googleMode.addEventListener('change', clearImportedSourceState);
+  els.fileMode.addEventListener('change', clearImportedSourceState);
+
   function importMatchingDatesWithRange() {
     const dateIdx = Number(els.dateColumn.value);
     if (!Number.isInteger(dateIdx)) return;
