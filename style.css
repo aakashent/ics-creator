@@ -253,7 +253,7 @@ footer { padding: 9px 8px 0; text-align: center; }
 }
 .import-switch input:checked + label {
   color: var(--accent-dark);
-  background: rgba(255,255,255,.92);
+  background: var(--segment-selected);
   box-shadow: 0 2px 8px rgba(27,53,49,.09);
 }
 .import-panel[hidden] { display: none; }
