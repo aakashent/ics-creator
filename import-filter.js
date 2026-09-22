@@ -14,6 +14,7 @@
     sheet = { headers: [], rows: [], totalRows: 0, usedRows: 0 };
     workbook = null;
     workbookFileName = '';
+    els.localFile.value = '';
 
     els.mapping.hidden = true;
     els.filterValueWrap.hidden = true;
